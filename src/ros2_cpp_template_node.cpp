@@ -1,5 +1,5 @@
 /*!*******************************************************************************************
- *  \file       cpp_template_main.cpp
+ *  \file       ros2_cpp_template_main.cpp
  *  \brief      Class executable
  *  \authors    Rafael Pérez Seguí
  *
@@ -31,9 +31,11 @@
  * EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  ********************************************************************************/
 
-#include <cpp_template/cpp_template.hpp>
+#include <ros2_cpp_template/ros2_cpp_template.hpp>
 
 int main(int argc, char* argv[]) {
-  cpp_template::CPPTemplate cpp_template;
+  rclcpp::init(argc, argv);
+  rclcpp::spin(std::make_shared<ros2_cpp_template::Ros2CppTemplate>());
+  rclcpp::shutdown();
   return 0;
 }

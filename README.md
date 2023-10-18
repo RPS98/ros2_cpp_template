@@ -1,3 +1,10 @@
-# cpp_template
+# ros2_cpp_template
 
-C++ project template, with Google GTest, Benchmark and CMake.
+ROS 2 Humble C++ project template, with:
+- Parameters
+- Launch file
+- Subscribers and publishers
+- Services and clients
+- Custom messages and services
+- Google GTest
+- Benchmark
