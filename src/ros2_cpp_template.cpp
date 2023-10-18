@@ -59,131 +59,97 @@ Ros2CppTemplate::Ros2CppTemplate(const std::string &namespace_) : Node(namespace
   RCLCPP_INFO(this->get_logger(), "Service client: '%s'", service_client_name.c_str());
 
   // Suscribers
-  subscription_ = this->create_subscription<std_msgs::msg::String>(
-      topic_sub, 10,
-      std::bind(&Ros2CppTemplate::subscription_callback, this, std::placeholders::_1));
-
-  custom_subscription_ = this->create_subscription<ros2_cpp_template::msg::MyTemplateMsg>(
-      topic_sub, 10,
-      std::bind(&Ros2CppTemplate::custom_subscription_callback, this, std::placeholders::_1));
+  if (topic_sub != "") {
+    subscription_ = this->create_subscription<std_msgs::msg::String>(
+        topic_sub, 10,
+        std::bind(&Ros2CppTemplate::subscription_callback, this, std::placeholders::_1));
+  }
 
   // Publishers
-  publisher_ = this->create_publisher<std_msgs::msg::String>(topic_pub, 10);
-
-  custom_publisher_ = this->create_publisher<ros2_cpp_template::msg::MyTemplateMsg>(topic_pub, 10);
+  if (topic_pub != "") {
+    publisher_ = this->create_publisher<std_msgs::msg::String>(topic_pub, 10);
+  }
 
   // Timers
   timer_ = this->create_wall_timer(std::chrono::duration<double>(1.0f / timer_freq),
                                    std::bind(&Ros2CppTemplate::timer_callback, this));
 
   // Services
-  service_ = this->create_service<std_srvs::srv::SetBool>(
-      service_name, std::bind(&Ros2CppTemplate::service_callback, this, std::placeholders::_1,
-                              std::placeholders::_2));
-
-  custom_service_ = this->create_service<ros2_cpp_template::srv::MyTemplateSrv>(
-      service_name, std::bind(&Ros2CppTemplate::custom_service_callback, this,
-                              std::placeholders::_1, std::placeholders::_2));
+  if (service_name != "") {
+    service_ = this->create_service<std_srvs::srv::SetBool>(
+        service_name, std::bind(&Ros2CppTemplate::service_callback, this, std::placeholders::_1,
+                                std::placeholders::_2));
+  }
 
   // Services clients
-  service_client_        = this->create_client<std_srvs::srv::SetBool>(service_client_name);
-  service_request_       = std::make_shared<std_srvs::srv::SetBool::Request>();
-  service_request_->data = true;
-  while (!service_client_->wait_for_service(1s)) {
-    if (!rclcpp::ok()) {
-      RCLCPP_ERROR(rclcpp::get_logger("rclcpp"),
-                   "Interrupted while waiting for the service. Exiting.");
-      break;
+  if (service_client_name != "") {
+    callback_group_ =
+        this->create_callback_group(rclcpp::CallbackGroupType::MutuallyExclusive, false);
+    callback_group_executor_.add_callback_group(callback_group_, this->get_node_base_interface());
+
+    service_client_ = this->create_client<std_srvs::srv::SetBool>(
+        service_client_name, rmw_qos_profile_services_default, callback_group_);
+    service_request_       = std::make_shared<std_srvs::srv::SetBool::Request>();
+    service_request_->data = true;
+    if (!service_client_->wait_for_service(std::chrono::seconds(1))) {
+      RCLCPP_WARN(this->get_logger(), "Service not available within 1 second.");
     }
-    RCLCPP_INFO(rclcpp::get_logger("rclcpp"), "service not available, waiting again...");
   }
 
-  custom_service_client_ =
-      this->create_client<ros2_cpp_template::srv::MyTemplateSrv>(service_client_name);
-  custom_service_request_ = std::make_shared<ros2_cpp_template::srv::MyTemplateSrv::Request>();
-  custom_service_request_->input = true;
-  while (!custom_service_client_->wait_for_service(1s)) {
-    if (!rclcpp::ok()) {
-      RCLCPP_ERROR(rclcpp::get_logger("rclcpp"),
-                   "Interrupted while waiting for the service. Exiting.");
-      break;
-    }
-    RCLCPP_INFO(rclcpp::get_logger("rclcpp"), "service not available, waiting again...");
-  }
+  RCLCPP_INFO(this->get_logger(), "Ros2CppTemplate initialized\n");
 }
 
 Ros2CppTemplate::~Ros2CppTemplate() {}
 
-void Ros2CppTemplate::subscription_callback(const std_msgs::msg::String::SharedPtr msg) {
-  RCLCPP_INFO(this->get_logger(), "I heard: '%s'", msg->data.c_str());
-}
-
-void Ros2CppTemplate::custom_subscription_callback(
-    const ros2_cpp_template::msg::MyTemplateMsg::SharedPtr msg) {
-  RCLCPP_INFO(this->get_logger(), "I heard: '%s'", msg->data ? "true" : "false");
-}
-
 void Ros2CppTemplate::timer_callback() {
-  // Publishers
-  auto message = std_msgs::msg::String();
-  message.data = "Working!";
-  RCLCPP_INFO(this->get_logger(), "Publishing: '%s'", message.data.c_str());
-  publisher_->publish(message);
-
-  // Services clients
-  auto result_future = service_client_->async_send_request(service_request_);
-  RCLCPP_INFO(this->get_logger(), "Service called with request: '%s'",
-              service_request_->data ? "true" : "false");
-
-  // Wait for the result.
-  if (result_future.wait_for(std::chrono::seconds(2)) == std::future_status::ready) {
-    service_response_ = result_future.get();
-    RCLCPP_INFO(this->get_logger(), "Service called with response value: '%s'",
-                service_response_->success ? "true" : "false");
-    RCLCPP_INFO(this->get_logger(), "Service called with response message: '%s'",
-                service_response_->message.c_str());
-  } else {
-    RCLCPP_ERROR(rclcpp::get_logger("rclcpp"), "Failed to call service");
+  // Check if publisher has been initialized
+  if (publisher_) {
+    // Publishers
+    auto message = std_msgs::msg::String();
+    message.data = "Working!";
+    RCLCPP_INFO(this->get_logger(), "TOPIC PUBLISH");
+    RCLCPP_INFO(this->get_logger(), "Msg: '%s' \n", message.data.c_str());
+    publisher_->publish(message);
   }
 
-  // Custom services clients
-  auto custom_result_future = custom_service_client_->async_send_request(custom_service_request_);
-  RCLCPP_INFO(this->get_logger(), "Custom Service called with request: '%s'",
-              custom_service_request_->input ? "true" : "false");
-
-  // Wait for the result.
-  if (custom_result_future.wait_for(std::chrono::seconds(2)) == std::future_status::ready) {
-    custom_service_response_ = custom_result_future.get();
-    RCLCPP_INFO(this->get_logger(), "Custom Service called with response value: '%s'",
-                custom_service_response_->output ? "true" : "false");
-  } else {
-    RCLCPP_ERROR(rclcpp::get_logger("rclcpp"), "Failed to call service");
+  // Check if service client has been initialized
+  if (service_client_) {
+    call_service();
   }
+}
+
+void Ros2CppTemplate::subscription_callback(const std_msgs::msg::String::SharedPtr msg) {
+  RCLCPP_INFO(this->get_logger(), "TOPIC CALLBACK");
+  RCLCPP_INFO(this->get_logger(), "Msg: '%s' \n", msg->data.c_str());
 }
 
 void Ros2CppTemplate::service_callback(
     const std::shared_ptr<std_srvs::srv::SetBool::Request> request,
     std::shared_ptr<std_srvs::srv::SetBool::Response> response) {
-  RCLCPP_INFO(this->get_logger(), "Service called with request: '%s'",
-              request->data ? "true" : "false");
+  RCLCPP_INFO(this->get_logger(), "SERVICE CALLBACK");
+  RCLCPP_INFO(this->get_logger(), "request: '%s'", request->data ? "true" : "false");
 
   response->success = true;
-  response->message =
-      "Service called with request: '" + std::string(request->data ? "true" : "false") + "'";
+  response->message = "service message";
 
-  RCLCPP_INFO(this->get_logger(), "Service called with response: '%s'",
-              response->success ? "true" : "false");
-  RCLCPP_INFO(this->get_logger(), "Service called with message: '%s'", response->message.c_str());
+  RCLCPP_INFO(this->get_logger(), "response: '%s'", response->success ? "true" : "false");
+  RCLCPP_INFO(this->get_logger(), "message: '%s' \n", response->message.c_str());
 }
 
-void Ros2CppTemplate::custom_service_callback(
-    const std::shared_ptr<ros2_cpp_template::srv::MyTemplateSrv::Request> request,
-    std::shared_ptr<ros2_cpp_template::srv::MyTemplateSrv::Response> response) {
-  RCLCPP_INFO(this->get_logger(), "Custom Service called with request: '%s'",
-              request->input ? "true" : "false");
-
-  response->output = true;
-
-  RCLCPP_INFO(this->get_logger(), "Custom Service called with response: '%s'",
-              response->output ? "true" : "false");
+void Ros2CppTemplate::call_service() {
+  RCLCPP_INFO(this->get_logger(), "SERVICE CALL");
+  if (service_client_ && service_client_->service_is_ready()) {
+    auto result_future = service_client_->async_send_request(service_request_);
+    if (callback_group_executor_.spin_until_future_complete(result_future) ==
+        rclcpp::FutureReturnCode::SUCCESS) {
+      auto result = result_future.get();
+      RCLCPP_INFO(this->get_logger(), "response value: '%s' \n",
+                  result->success ? "true" : "false");
+      RCLCPP_INFO(this->get_logger(), "response message: '%s' \n", result->message.c_str());
+    } else {
+      RCLCPP_ERROR(this->get_logger(), "Failed to call service\n");
+    }
+  } else {
+    RCLCPP_WARN(this->get_logger(), "Service client not available\n");
+  }
 }

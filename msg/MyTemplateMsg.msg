@@ -1,3 +1,0 @@
-# MyTemplate message
-
-bool data

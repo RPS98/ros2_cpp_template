@@ -24,37 +24,9 @@ set(PROJECT_DEPENDENCIES
   builtin_interfaces
 )
 
-# # Comment the following block if not export msgs and srvs
-set(SERVICE_DEPENDENCIES
-  std_srvs
-  std_msgs
-  builtin_interfaces
-)
-
-set(MSGS_FILES
-  "msg/MyTemplateMsg.msg"
-)
-
-set(SRVS_FILES
-  "srv/MyTemplateSrv.srv"
-)
-
-find_package(rosidl_default_generators REQUIRED)
-
-# # End of block
 foreach(DEPENDENCY ${PROJECT_DEPENDENCIES})
   find_package(${DEPENDENCY} REQUIRED)
 endforeach()
-
-# # Comment the following block if not export msgs and srvs
-# Generate ROS interfaces
-rosidl_generate_interfaces(${PROJECT_NAME}
-  ${MSGS_FILES}
-  ${SRVS_FILES}
-  DEPENDENCIES ${SERVICE_DEPENDENCIES}
-)
-
-# # End of block
 
 # Include necessary directories
 include_directories(
@@ -78,22 +50,6 @@ ament_target_dependencies(${PROJECT_NAME}_node ${PROJECT_DEPENDENCIES})
 # Create the shared library
 add_library(${PROJECT_NAME}_lib SHARED ${SOURCE_CPP_FILES})
 ament_target_dependencies(${PROJECT_NAME}_lib ${PROJECT_DEPENDENCIES})
-
-# # End of block
-
-# # Comment the following block if not export msgs and srvs
-if("$ENV{AMENT_CURRENT_RELEASE}" STREQUAL "galactic")
-  message(STATUS "ROS 2 Galactic detected")
-  rosidl_target_interfaces(${PROJECT_NAME}_node
-    ${PROJECT_NAME} "rosidl_typesupport_cpp")
-  rosidl_target_interfaces(${PROJECT_NAME}_lib
-    ${PROJECT_NAME} "rosidl_typesupport_cpp")
-else()
-  message(STATUS "Using Humble as default")
-  rosidl_get_typesupport_target(cpp_typesupport_target ${PROJECT_NAME} rosidl_typesupport_cpp)
-  target_link_libraries(${PROJECT_NAME}_node "${cpp_typesupport_target}")
-  target_link_libraries(${PROJECT_NAME}_lib "${cpp_typesupport_target}")
-endif()
 
 # # End of block
 
@@ -150,11 +106,10 @@ install(DIRECTORY
   DESTINATION share/${PROJECT_NAME}
 )
 
-# # Comment the following block if not export msgs and srvs
-# Export the dependencies of the package
-ament_export_dependencies(rosidl_default_runtime)
-
-# # End of block
+install(DIRECTORY
+  config
+  DESTINATION share/${PROJECT_NAME}
+)
 
 # Tests
 include(CTest)

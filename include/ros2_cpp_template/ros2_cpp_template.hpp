@@ -37,8 +37,6 @@
 #include <chrono>
 #include <memory>
 #include "rclcpp/rclcpp.hpp"
-#include "ros2_cpp_template/msg/my_template_msg.hpp"
-#include "ros2_cpp_template/srv/my_template_srv.hpp"
 #include "std_msgs/msg/string.hpp"
 #include "std_srvs/srv/set_bool.hpp"
 
@@ -64,27 +62,23 @@ public:
 private:
   // Subscribers
   rclcpp::Subscription<std_msgs::msg::String>::SharedPtr subscription_;
-  rclcpp::Subscription<ros2_cpp_template::msg::MyTemplateMsg>::SharedPtr custom_subscription_;
 
   // Publishers
   rclcpp::Publisher<std_msgs::msg::String>::SharedPtr publisher_;
-  rclcpp::Publisher<ros2_cpp_template::msg::MyTemplateMsg>::SharedPtr custom_publisher_;
 
   // Timers
   rclcpp::TimerBase::SharedPtr timer_;
 
   // Services
   rclcpp::Service<std_srvs::srv::SetBool>::SharedPtr service_;
-  rclcpp::Service<ros2_cpp_template::srv::MyTemplateSrv>::SharedPtr custom_service_;
 
   // Service clients
+  rclcpp::CallbackGroup::SharedPtr callback_group_;
+  rclcpp::executors::SingleThreadedExecutor callback_group_executor_;
+
   rclcpp::Client<std_srvs::srv::SetBool>::SharedPtr service_client_;
   std_srvs::srv::SetBool::Request::SharedPtr service_request_;
   std_srvs::srv::SetBool::Response::SharedPtr service_response_;
-
-  rclcpp::Client<ros2_cpp_template::srv::MyTemplateSrv>::SharedPtr custom_service_client_;
-  ros2_cpp_template::srv::MyTemplateSrv::Request::SharedPtr custom_service_request_;
-  ros2_cpp_template::srv::MyTemplateSrv::Response::SharedPtr custom_service_response_;
 
 private:
   // Callbacks Subscribers
@@ -95,13 +89,6 @@ private:
    * @param msg std_msgs::msg::String::SharedPtr Message received
    */
   void subscription_callback(const std_msgs::msg::String::SharedPtr msg);
-
-  /**
-   * @brief Subscription callback
-   *
-   * @param msg ros2_cpp_template::msg::MyTemplateMsg::SharedPtr Message received
-   */
-  void custom_subscription_callback(const ros2_cpp_template::msg::MyTemplateMsg::SharedPtr msg);
 
   // Callbacks Timers
 
@@ -121,16 +108,12 @@ private:
   void service_callback(const std::shared_ptr<std_srvs::srv::SetBool::Request> request,
                         const std::shared_ptr<std_srvs::srv::SetBool::Response> response);
 
+  // Call Service clients
+
   /**
-   * @brief Service callback
-   *
-   * @param request std::shared_ptr<ros2_cpp_template::srv::MyTemplateSrv::Request> Request received
-   * @param response std::shared_ptr<ros2_cpp_template::srv::MyTemplateSrv::Response> Response to
-   * send
+   * @brief Call service
    */
-  void custom_service_callback(
-      const std::shared_ptr<ros2_cpp_template::srv::MyTemplateSrv::Request> request,
-      const std::shared_ptr<ros2_cpp_template::srv::MyTemplateSrv::Response> response);
+  void call_service();
 };
 }  // namespace ros2_cpp_template
 

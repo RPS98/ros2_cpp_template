@@ -12,6 +12,7 @@ def get_node(context, *args, **kwargs):
     node = Node(
         package="ros2_cpp_template",
         executable="ros2_cpp_template_node",
+        name=LaunchConfiguration('name'),
         namespace=LaunchConfiguration('namespace'),
         output="screen",
         emulate_tty=True,
@@ -22,7 +23,7 @@ def get_node(context, *args, **kwargs):
             LaunchConfiguration('config_file')
         ]
     )
-    return node
+    return [node]
 
 
 def generate_launch_description():
@@ -36,6 +37,8 @@ def generate_launch_description():
     return LaunchDescription([
         DeclareLaunchArgument(
             'namespace', default_value='ros2_cpp_template_node'),
+        DeclareLaunchArgument(
+            'name', default_value='ros2_cpp_template'),
         DeclareLaunchArgument('use_sim_time', default_value='false'),
         DeclareLaunchArgument('config_file',
                               default_value=config_file,
