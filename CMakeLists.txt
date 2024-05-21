@@ -111,64 +111,12 @@ install(DIRECTORY
   DESTINATION share/${PROJECT_NAME}
 )
 
-# Tests
-include(CTest)
-
-# Check if tests are enabled
+# Build tests if testing is enabled
 if(BUILD_TESTING)
-  # Find additional test dependencies
-  set(TEST_DEPENDENCIES
-    benchmark
-  )
+  find_package(ament_lint_auto REQUIRED)
+  ament_lint_auto_find_test_dependencies()
 
-  foreach(DEPENDENCY ${TEST_DEPENDENCIES})
-    find_package(${DEPENDENCY} REQUIRED)
-  endforeach()
-
-  # Find and add test source files
-  file(GLOB TEST_SOURCE "tests/*_test.cpp")
-
-  foreach(TEST_FILE ${TEST_SOURCE})
-    get_filename_component(TEST_NAME ${TEST_FILE} NAME_WE)
-
-    # Add test executable and link necessary dependencies
-    add_executable(${PROJECT_NAME}_${TEST_NAME} ${TEST_FILE})
-    ament_target_dependencies(${PROJECT_NAME}_${TEST_NAME} ${PROJECT_DEPENDENCIES})
-    target_link_libraries(${PROJECT_NAME}_${TEST_NAME} ${PROJECT_NAME}_lib)
-  endforeach()
-
-  # Include and make available GoogleTest
-  include(FetchContent)
-  FetchContent_Declare(
-    googletest
-    URL https://github.com/google/googletest/archive/03597a01ee50ed33e9dfd640b249b4be3799d395.zip
-  )
-  FetchContent_MakeAvailable(googletest)
-  include(GoogleTest)
-
-  # Find and add GTest source files
-  file(GLOB TEST_SOURCE "tests/*_gtest.cpp")
-
-  foreach(TEST_FILE ${TEST_SOURCE})
-    get_filename_component(TEST_NAME ${TEST_FILE} NAME_WE)
-
-    # Add GTest executable and link necessary dependencies
-    add_executable(${PROJECT_NAME}_${TEST_NAME} ${TEST_FILE})
-    ament_target_dependencies(${PROJECT_NAME}_${TEST_NAME} ${PROJECT_DEPENDENCIES})
-    target_link_libraries(${PROJECT_NAME}_${TEST_NAME} GTest::gtest_main ${PROJECT_NAME}_lib)
-  endforeach()
-
-  # Find and add benchmark source files
-  file(GLOB TEST_SOURCE "tests/*_benchmark.cpp")
-
-  foreach(TEST_FILE ${TEST_SOURCE})
-    get_filename_component(TEST_NAME ${TEST_FILE} NAME_WE)
-
-    # Add benchmark executable and link necessary dependencies
-    add_executable(${PROJECT_NAME}_${TEST_NAME} ${TEST_FILE})
-    ament_target_dependencies(${PROJECT_NAME}_${TEST_NAME} ${PROJECT_DEPENDENCIES})
-    target_link_libraries(${PROJECT_NAME}_${TEST_NAME} benchmark::benchmark ${PROJECT_NAME}_lib)
-  endforeach()
+  add_subdirectory(tests)
 endif()
 
 # Package the project using ament
